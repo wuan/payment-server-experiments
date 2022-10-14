@@ -37,20 +37,20 @@ import qualified Servant as S
   )
 import Server.Custom (JsonAsOctetStream)
 
-type Api = ItemEndpoint :<|> OtherEndpoint
+type Api = IncomingWebhookEndpoint :<|> OtherEndpoint
 
-type ItemEndpoint =
-  "item" :> S.Header "x-signature" DT.Text :> S.ReqBody '[JsonAsOctetStream] DB.ByteString :> S.Post '[S.OctetStream] DB.ByteString
+type IncomingWebhookEndpoint =
+  "item" :> S.Header "x-signature" DT.Text :> S.ReqBody '[JsonAsOctetStream] DB.ByteString :> S.Post '[S.JSON] Response
 
 type OtherEndpoint =
   "item" :> S.Get '[S.JSON] [Item]
 
-itemEndpoint :: S.Server ItemEndpoint
-itemEndpoint = uploadItem
+incomingWebhookEndpoint :: S.Server IncomingWebhookEndpoint
+incomingWebhookEndpoint = incomingWebhook
 
-uploadItem :: Maybe DT.Text -> DB.ByteString -> S.Handler DB.ByteString
-uploadItem header body = do
-  return $ encodeUtf8 "OK"
+incomingWebhook :: Maybe DT.Text -> DB.ByteString -> S.Handler Response
+incomingWebhook header body = do
+  return $ Response "OK"
 
 otherEndpoint :: S.Server OtherEndpoint
 otherEndpoint = otherAction
@@ -59,13 +59,19 @@ otherAction :: S.Handler [Item]
 otherAction = return [Item 123 "Test"]
 
 endpoints :: S.Server Api
-endpoints = itemEndpoint :<|> otherEndpoint
+endpoints = incomingWebhookEndpoint :<|> otherEndpoint
 
 api :: S.Proxy Api
 api = S.Proxy
 
 server :: IO S.Application
 server = return $ S.serve api endpoints
+
+data Response = Response {status :: DT.Text} deriving (Eq, Show, Generic)
+
+instance A.ToJSON Response
+
+instance A.FromJSON Response
 
 data Item = Item
   { itemId :: Integer,

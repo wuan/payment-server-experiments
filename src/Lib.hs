@@ -22,7 +22,7 @@ import Web.Stripe.Event
 run :: IO ()
 run =
   WL.withStdoutLogger $ \aplogger -> do
-    let port = 3000
+    let port = 8080
         settings =
           Warp.setPort port $
             Warp.setBeforeMainLoop (hPutStrLn stderr ("listening on port " ++ show port)) $
