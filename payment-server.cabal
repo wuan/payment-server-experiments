@@ -37,12 +37,15 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , fast-logger
     , http-media
     , servant
     , servant-server
     , stripe-core
     , stripe-haskell
     , text
+    , time
+    , transformers
     , wai
     , wai-logger
     , warp
@@ -59,6 +62,7 @@ executable payment-server-exe
       aeson
     , base >=4.7 && <5
     , bytestring
+    , fast-logger
     , http-media
     , payment-server
     , servant
@@ -66,6 +70,8 @@ executable payment-server-exe
     , stripe-core
     , stripe-haskell
     , text
+    , time
+    , transformers
     , wai
     , wai-logger
     , warp
@@ -83,6 +89,7 @@ test-suite payment-server-test
       aeson
     , base >=4.7 && <5
     , bytestring
+    , fast-logger
     , http-media
     , payment-server
     , servant
@@ -90,6 +97,8 @@ test-suite payment-server-test
     , stripe-core
     , stripe-haskell
     , text
+    , time
+    , transformers
     , wai
     , wai-logger
     , warp

@@ -5,9 +5,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Server (server) where
+module Server (server, AppCtx) where
 
-import qualified Data.Aeson as A (FromJSON, ToJSON)
+import qualified Data.Aeson as A (FromJSON, ToJSON(toEncoding), encode, genericToEncoding, defaultOptions)
 import qualified Data.ByteString as DB (ByteString)
 import qualified Data.ByteString.Lazy as DBL
   ( ByteString,
@@ -19,7 +19,7 @@ import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics (Generic)
 import Servant
   ( (:<|>) ((:<|>)),
-    (:>),
+    (:>), hoistServerWithContext, hoistServer,
   )
 import qualified Servant as S
   ( Accept (..),
@@ -33,9 +33,21 @@ import qualified Servant as S
     Proxy (Proxy),
     ReqBody,
     Server,
+    ServerT,
+    Context(EmptyContext),
     serve,
+    serveWithContext,
+    serveWithContextT,
   )
 import Server.Custom (JsonAsOctetStream)
+import qualified System.Log.FastLogger as FL (LoggerSet, ToLogStr(toLogStr), pushLogStrLn)
+import qualified Data.Time as DTi (UTCTime, getCurrentTime)
+import qualified Control.Monad.Trans.Reader as TR (ReaderT(runReaderT), asks)
+import Control.Monad.IO.Class (liftIO)
+
+type AppM = TR.ReaderT AppCtx S.Handler
+
+newtype AppCtx = AppCtx {_getLogger :: FL.LoggerSet}
 
 type Api = IncomingWebhookEndpoint :<|> OtherEndpoint
 
@@ -45,27 +57,53 @@ type IncomingWebhookEndpoint =
 type OtherEndpoint =
   "item" :> S.Get '[S.JSON] [Item]
 
-incomingWebhookEndpoint :: S.Server IncomingWebhookEndpoint
+incomingWebhookEndpoint :: S.ServerT IncomingWebhookEndpoint AppM
 incomingWebhookEndpoint = incomingWebhook
 
-incomingWebhook :: Maybe DT.Text -> DB.ByteString -> S.Handler Response
-incomingWebhook header body = do
-  return $ Response "OK"
+incomingWebhook :: Maybe DT.Text -> DB.ByteString -> AppM Response
+incomingWebhook header body =
+  do
+    logset <- TR.asks _getLogger
+    tstamp <- liftIO DTi.getCurrentTime
+    let logMsg =
+          LogMessage
+            { message = "let's do some logging!",
+              timestamp = tstamp,
+              level = "info"
+            }
+    -- emit log message
+    liftIO $ FL.pushLogStrLn logset $ FL.toLogStr logMsg
+    return $ Response "OK"
 
-otherEndpoint :: S.Server OtherEndpoint
+data LogMessage = LogMessage
+  { message :: !DT.Text,
+    timestamp :: !DTi.UTCTime,
+    level :: !DT.Text
+  }
+  deriving (Eq, Show, Generic)
+
+instance A.FromJSON LogMessage
+
+instance A.ToJSON LogMessage where
+  toEncoding = A.genericToEncoding A.defaultOptions
+
+instance FL.ToLogStr LogMessage where
+  toLogStr = FL.toLogStr . A.encode
+
+otherEndpoint :: S.ServerT OtherEndpoint AppM
 otherEndpoint = otherAction
 
-otherAction :: S.Handler [Item]
+otherAction :: AppM [Item]
 otherAction = return [Item 123 "Test"]
 
-endpoints :: S.Server Api
+endpoints :: S.ServerT Api AppM
 endpoints = incomingWebhookEndpoint :<|> otherEndpoint
 
 api :: S.Proxy Api
 api = S.Proxy
 
-server :: IO S.Application
-server = return $ S.serve api endpoints
+server :: AppCtx -> IO S.Application
+server ctx = return $ S.serveWithContext api S.EmptyContext $ (flip TR.runReaderT ctx) endpoints
 
 data Response = Response {status :: DT.Text} deriving (Eq, Show, Generic)
 
