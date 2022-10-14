@@ -13,7 +13,7 @@ import Data.Text.Lazy.Encoding (encodeUtf8)
 import GHC.Generics (Generic)
 import qualified Network.Wai.Handler.Warp as Warp (defaultSettings, runSettings, setBeforeMainLoop, setLogger, setPort)
 import qualified Network.Wai.Logger as WL (withStdoutLogger)
-import Server (server)
+import Server (server, AppCtx)
 import System.IO (hPutStrLn, stderr)
 import Web.Stripe.Event
   ( Event (Event, eventData, eventId, eventType),
@@ -22,13 +22,17 @@ import Web.Stripe.Event
 run :: IO ()
 run =
   WL.withStdoutLogger $ \aplogger -> do
+      warpLogger <- jsonRequestLogger
+      appLogger <- newStdoutLoggerSet defaultBufSize
+      let ctx = AppCtx config appLogger
+      
     let port = 8080
         settings =
           Warp.setPort port $
             Warp.setBeforeMainLoop (hPutStrLn stderr ("listening on port " ++ show port)) $
               Warp.setLogger aplogger $
                 Warp.defaultSettings
-    Warp.runSettings settings =<< server
+    Warp.runSettings settings =<< server ctx
 
 data Payload = Payload {id :: DT.Text} deriving (Show, Generic)
 
