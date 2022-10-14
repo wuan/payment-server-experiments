@@ -1,0 +1,96 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           payment-server
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/wuan/githubuser/payment-server-experiments>
+homepage:       https://github.com/wuan/payment-server-experiments#readme
+bug-reports:    https://github.com/wuan/payment-server-experiments/issues
+author:         Andreas Wuerl
+maintainer:     example@example.com
+copyright:      2022 Andreas Wuerl
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/wuan/payment-server-experiments
+
+library
+  exposed-modules:
+      Lib
+      Server
+      Server.Custom
+  other-modules:
+      Paths_payment_server
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , http-media
+    , servant
+    , servant-server
+    , stripe-core
+    , stripe-haskell
+    , text
+    , wai
+    , wai-logger
+    , warp
+  default-language: Haskell2010
+
+executable payment-server-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_payment_server
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , http-media
+    , payment-server
+    , servant
+    , servant-server
+    , stripe-core
+    , stripe-haskell
+    , text
+    , wai
+    , wai-logger
+    , warp
+  default-language: Haskell2010
+
+test-suite payment-server-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_payment_server
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , http-media
+    , payment-server
+    , servant
+    , servant-server
+    , stripe-core
+    , stripe-haskell
+    , text
+    , wai
+    , wai-logger
+    , warp
+  default-language: Haskell2010
